@@ -1,52 +1,55 @@
 package com.netflix.netflixb.controller;
+
+import com.netflix.netflixb.entity.Role;
 import com.netflix.netflixb.entity.User;
+import com.netflix.netflixb.repository.RoleRepository;
 import com.netflix.netflixb.repository.UserRepository;
-import com.netflix.netflixb.security.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
-    @Autowired
-    private JwtUtils jwtUtils;
-    @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody User user) {
-        // Email kontrolü
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("Error: Email is already taken!");
+
+    @PostMapping("/register")
+    public String registerUser(@RequestBody User userRequest) {
+
+        // E-mail zaten var mı kontrol et
+        if (userRepository.findByEmail(userRequest.getEmail()).isPresent()) {
+            return "Email already registered!";
         }
 
-        // Yeni kullanıcı oluştur
-        User newUser = new User();
-        newUser.setEmail(user.getEmail());
-        newUser.setPassword(passwordEncoder.encode(user.getPassword()));
-        newUser.setRole("USER"); // Varsayılan rol
+        // Şifreyi şifrele
+        String encodedPassword = passwordEncoder.encode(userRequest.getPassword());
+        userRequest.setPassword(encodedPassword);
 
-        userRepository.save(newUser);
-        return ResponseEntity.ok("User registered successfully!");
-    }
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User loginRequest) {
-        // Kullanıcıyı veritabanından bul
-        User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("Error: User not found."));
-
-        // Şifre kontrolü
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            return ResponseEntity.badRequest().body("Error: Invalid password!");
+        // Default rolü ekle (ROLE_USER)
+        Optional<Role> userRole = roleRepository.findByName("ROLE_USER");
+        if (userRole.isEmpty()) {
+            return "Default role not found!";
         }
 
-        // Token oluştur
-        String token = jwtUtils.generateToken(user.getEmail());
-        return ResponseEntity.ok(token);
+        Set<Role> roles = new HashSet<>();
+        roles.add(userRole.get());
+        userRequest.setRoles(roles);
+
+        // Kullanıcıyı kaydet
+        userRepository.save(userRequest);
+
+        return "User registered successfully!";
     }
 }

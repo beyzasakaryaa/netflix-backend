@@ -18,7 +18,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // ✅ CSRF devre dışı
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/","/api/auth/**").permitAll() // ✅ /api/auth/register için izin
+                        .requestMatchers("" +
+                                "/api/auth/**").permitAll() // ✅ /api/auth/register için izin
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
