@@ -1,11 +1,15 @@
 package com.netflix.netflixb.controller;
 
+import com.netflix.netflixb.dto.UserRegisterDTO;
+import com.netflix.netflixb.dto.LoginRequestDTO;
 import com.netflix.netflixb.entity.Role;
 import com.netflix.netflixb.entity.User;
 import com.netflix.netflixb.payload.response.JwtResponse;
 import com.netflix.netflixb.repository.RoleRepository;
 import com.netflix.netflixb.repository.UserRepository;
 import com.netflix.netflixb.security.JwtUtils;
+import com.netflix.netflixb.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +24,9 @@ import java.util.Set;
 public class AuthController {
 
     @Autowired
+    private UserService userService;  // Register işlemi UserService ile olsun
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -29,48 +36,35 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private JwtUtils jwtUtils;  // Burada jwtUtils'yi ekledik
+    private JwtUtils jwtUtils;
 
+    // Register Endpoint - DTO ile
     @PostMapping("/register")
-    public String registerUser(@RequestBody User userRequest) {
-
-        if (userRepository.findByEmail(userRequest.getEmail()).isPresent()) {
-            return "Email already registered!";
+    public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegisterDTO userRegisterDTO) {
+        try {
+            userService.registerUser(userRegisterDTO);
+            return ResponseEntity.status(201).body("Kullanıcı başarıyla kayıt oldu.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        String encodedPassword = passwordEncoder.encode(userRequest.getPassword());
-        userRequest.setPassword(encodedPassword);
-
-        Optional<Role> userRole = roleRepository.findByName("ROLE_USER");
-        if (userRole.isEmpty()) {
-            return "Default role not found!";
-        }
-
-        Set<Role> roles = new HashSet<>();
-        roles.add(userRole.get());
-        userRequest.setRoles(roles);
-
-        userRepository.save(userRequest);
-
-        return "User registered successfully!";
     }
 
+    // Login Endpoint - DTO ile
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody User loginRequest) {
-        Optional<User> userOpt = userRepository.findByEmail(loginRequest.getEmail());
+    public ResponseEntity<?> loginUser(@Valid @RequestBody LoginRequestDTO loginRequestDTO) {
+        Optional<User> userOpt = userRepository.findByEmail(loginRequestDTO.getEmail());
+
         if (userOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("User not found!");
+            return ResponseEntity.badRequest().body("Kullanıcı bulunamadı!");
         }
 
         User user = userOpt.get();
 
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            return ResponseEntity.badRequest().body("Incorrect password!");
+        if (!passwordEncoder.matches(loginRequestDTO.getPassword(), user.getPassword())) {
+            return ResponseEntity.badRequest().body("Şifre hatalı!");
         }
 
         String jwt = jwtUtils.generateToken(user.getEmail());
-
         return ResponseEntity.ok(new JwtResponse(jwt));
     }
-
 }

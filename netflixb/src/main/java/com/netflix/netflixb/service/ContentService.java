@@ -1,19 +1,19 @@
 package com.netflix.netflixb.service;
 
-import com.netflix.netflixb.entity.Content;
+import com.netflix.netflixb.dto.ContentRequestDTO;
+import com.netflix.netflixb.dto.ContentResponseDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface ContentService {
 
-    Content saveContent(Content content);
+    ContentResponseDTO saveContent(ContentRequestDTO contentRequestDTO);
 
-    List<Content> getAllContents();
+    List<ContentResponseDTO> getAllContents();
 
-    Optional<Content> getContentById(Long id);
+    ContentResponseDTO getContentById(Long id);
 
-    Content updateContent(Long id, Content content);
+    ContentResponseDTO updateContent(Long id, ContentRequestDTO contentRequestDTO);
 
     void deleteContent(Long id);
 }
