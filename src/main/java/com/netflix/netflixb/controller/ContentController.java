@@ -28,11 +28,13 @@ public class ContentController {
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
-    // ✅ Tüm içerikleri getirme (herkes erişebilir)
+    // ✅ Tüm içerikleri getirme (sadece USER)
+    @PreAuthorize("hasRole('USER')")
     @GetMapping
     public ResponseEntity<List<ContentResponseDTO>> getAllContents() {
         return ResponseEntity.ok(contentService.getAllContents());
     }
+
 
     // ✅ Belirli içerik detayını getirme
     @GetMapping("/{id}")
