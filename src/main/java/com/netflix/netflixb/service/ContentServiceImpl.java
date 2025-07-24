@@ -71,4 +71,19 @@ public class ContentServiceImpl implements ContentService {
         */
         contentRepository.deleteById(id);
     }
+
+    @Override
+    public List<ContentResponseDTO> filterContents(
+            String title,
+            String genre,
+            Integer year,
+            Double minImdb,
+            Double maxImdb
+    ) {
+        List<Content> contents = contentRepository.findByFilters(title, genre, year, minImdb, maxImdb);
+        return contents.stream()
+                .map(content -> modelMapper.map(content, ContentResponseDTO.class))
+                .collect(Collectors.toList());
+    }
+
 }

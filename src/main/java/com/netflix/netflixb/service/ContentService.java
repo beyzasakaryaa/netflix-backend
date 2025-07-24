@@ -16,4 +16,13 @@ public interface ContentService {
     ContentResponseDTO updateContent(Long id, ContentRequestDTO contentRequestDTO);
 
     void deleteContent(Long id);
+
+    // Yeni eklenen metot: Arama ve filtreleme
+    List<ContentResponseDTO> filterContents(
+            String title,
+            String genre,
+            Integer year,
+            Double minImdb,
+            Double maxImdb
+    );
 }
